@@ -4,8 +4,7 @@ EtmStream listner for PowerShell
 
 ## Get-TraceEventStream Cmdlet
 
-```
-#[ParameterSet 1]
+```ps1
 Get-TraceEventStream [-NameOrGuid] <string> [-DumpWithColor]
 [-TraceLevel <TraceEventLevel> {
     Always
@@ -16,7 +15,6 @@ Get-TraceEventStream [-NameOrGuid] <string> [-DumpWithColor]
     | Verbose
 }] [<CommonParameters>]
 
-#[ParameterSet 2]
 Get-TraceEventStream [-WellKnownEventSource] <string> {
     AspNetEventSource
     | ConcurrentCollectionsEventSource
@@ -53,14 +51,14 @@ You can choose WellKnownEventSource providers.
 
 ### View in GridView-Window
 
-```
+```ps1
 PS C:\> Get-TraceEventStream SampleEventSource | Out-GridView
 ```
 
-![](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView.png)
+![EtwStreamPS_Out-GridView.png](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView.png)
 
 #### Sorting and Filtering items
 
-![](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView_filter.png)
+![EtwStreamPS_Out-GridView_filter.png](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView_filter.png)
 
-![](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView_filter2.png)
+![EtwStreamPS_Out-GridView_filter2.png](https://raw.githubusercontent.com/pierre3/Images/master/EtwStreamPS_Out-GridView_filter2.png)
