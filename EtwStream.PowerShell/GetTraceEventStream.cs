@@ -1,7 +1,9 @@
 ﻿using Microsoft.Diagnostics.Tracing;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Management.Automation;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -23,11 +25,11 @@ namespace EtwStream.PowerShell
             nameof(WellKnownEventSources.SqlEventSource),
             nameof(WellKnownEventSources.SynchronizationEventSource),
             nameof(WellKnownEventSources.TplEventSource))]
-        [Parameter(Position = 0, ParameterSetName = "wellKnown", Mandatory = true)]
-        public string WellKnownEventSource { get; set; }
+        [Parameter(Position = 0, ParameterSetName = "wellKnown", Mandatory = true, ValueFromPipeline = true)]
+        public string[] WellKnownEventSource { get; set; }
 
-        [Parameter(Position = 0, ParameterSetName = "nameOrGuid", Mandatory = true)]
-        public string NameOrGuid { get; set; }
+        [Parameter(Position = 0, ParameterSetName = "nameOrGuid", Mandatory = true, ValueFromPipeline = true)]
+        public string[] NameOrGuid { get; set; }
 
         [Parameter]
         public SwitchParameter DumpWithColor { get; set; }
@@ -35,19 +37,31 @@ namespace EtwStream.PowerShell
         [Parameter]
         public TraceEventLevel TraceLevel { get; set; } = TraceEventLevel.Verbose;
 
+        private List<IObservable<TraceEvent>> listeners = new List<IObservable<TraceEvent>>();
+
 
         protected override void ProcessRecord()
         {
-            IObservable<TraceEvent> listener = (ParameterSetName == "wellKnown")
-                ? GetWellKnownEventListener(WellKnownEventSource)
-                : ObservableEventListener.FromTraceEvent(NameOrGuid);
-            
+            if (ParameterSetName == "wellKnown")
+            {
+
+                listeners.AddRange(WellKnownEventSource.Select(x => GetWellKnownEventListener(x)).Where(x => x != null));
+            }
+            else
+            {
+                listeners.AddRange(NameOrGuid.Select(x => ObservableEventListener.FromTraceEvent(x)));
+            }
+        }
+
+        protected override void EndProcessing()
+        {
+
             var q = new BlockingCollection<Action>();
             Exception exception = null;
 
-            var d = listener
-                .Where(x=> Process.GetCurrentProcess().Id != x.ProcessID)
-                .Where(x=>x.Level <= TraceLevel)
+            var d = listeners.Merge()
+                .Where(x => Process.GetCurrentProcess().Id != x.ProcessID)
+                .Where(x => x.Level <= TraceLevel)
                 .Subscribe(
                 x =>
                 {
@@ -112,9 +126,9 @@ namespace EtwStream.PowerShell
                 case nameof(WellKnownEventSources.TplEventSource):
                     return ObservableEventListener.FromTraceEvent(WellKnownEventSources.TplEventSource);
                 default:
-                    return Observable.Empty<TraceEvent>();
+                    return null;
             }
         }
     }
-    
+
 }
